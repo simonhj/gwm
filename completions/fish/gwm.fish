@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
 function __gwm_repo_root
   command git rev-parse --show-toplevel 2>/dev/null
 end

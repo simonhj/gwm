@@ -3,6 +3,8 @@
 `gwm` is a small helper for managing git worktrees by branch name. Its largely
 designed around the authors own workflow using worktress
 
+License: BSD 3-Clause. See `LICENSE`.
+
 Usage:
   gwm new <branch>
   gwm shell <branch>
