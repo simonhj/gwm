@@ -48,14 +48,11 @@ repo_name() {
 
 expand_base_dir() {
   local base_dir
-  base_dir="${GWM_WORKTREE_LOCATION:-~/worktrees}"
+  base_dir="${GWM_WORKTREE_LOCATION:-$HOME/worktrees}"
 
   case "$base_dir" in
-    ~)
-      base_dir="$HOME"
-      ;;
-    ~/*)
-      base_dir="$HOME/${base_dir#~/}"
+    ~|~/*)
+      base_dir="${base_dir/#~/$HOME}"
       ;;
   esac
 
