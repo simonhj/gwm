@@ -1,0 +1,184 @@
+#!/usr/bin/env bash
+
+if [ -z "${BASH_VERSION:-}" ]; then
+  echo "gwm: this tool requires bash" >&2
+  exit 2
+fi
+
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage:
+  gwm new <branch>
+  gwm shell <branch>
+  gwm path <branch>
+  gwm remove <branch>
+EOF
+}
+
+die() {
+  echo "gwm: $*" >&2
+  exit 1
+}
+
+require_git_repo() {
+  if ! repo_root=$(git rev-parse --show-toplevel 2>/dev/null); then
+    die "not a git repository"
+  fi
+  printf '%s' "$repo_root"
+}
+
+repo_name() {
+  local repo_root
+
+  repo_root=$(require_git_repo)
+  repo_root=${repo_root%/}
+  printf '%s' "${repo_root##*/}"
+}
+
+expand_base_dir() {
+  local base_dir
+  base_dir="${GWM_WORKTREE_LOCATION:-~/worktrees}"
+
+  case "$base_dir" in
+    ~)
+      base_dir="$HOME"
+      ;;
+    ~/*)
+      base_dir="$HOME/${base_dir#~/}"
+      ;;
+  esac
+
+  printf '%s' "$base_dir"
+}
+
+select_shell() {
+  local candidate
+
+  candidate="${SHELL:-}"
+  if [ -n "$candidate" ] && [ -x "$candidate" ]; then
+    printf '%s' "$candidate"
+    return 0
+  fi
+
+  if command -v getent >/dev/null 2>&1; then
+    candidate=$(getent passwd "$USER" | cut -d: -f7)
+    if [ -n "$candidate" ] && [ -x "$candidate" ]; then
+      printf '%s' "$candidate"
+      return 0
+    fi
+  fi
+
+  printf '%s' "/bin/bash"
+}
+
+command_new() {
+  local branch repo_root repo_name base_dir worktree_path
+
+  branch="$1"
+  repo_name=$(repo_name)
+  base_dir=$(expand_base_dir)
+  worktree_path="$base_dir/$repo_name/$branch"
+
+  mkdir -p "$base_dir/$repo_name"
+
+  if [ -e "$worktree_path" ]; then
+    die "worktree path already exists: $worktree_path"
+  fi
+
+  if git show-ref --verify --quiet "refs/heads/$branch"; then
+    git worktree add "$worktree_path" "$branch"
+  else
+    git worktree add -b "$branch" "$worktree_path"
+  fi
+
+  printf '%s\n' "$worktree_path"
+}
+
+command_shell() {
+  local branch repo_name base_dir worktree_path shell
+
+  branch="$1"
+  repo_name=$(repo_name)
+  base_dir=$(expand_base_dir)
+  worktree_path="$base_dir/$repo_name/$branch"
+
+  if [ ! -d "$worktree_path" ]; then
+    die "worktree path not found: $worktree_path"
+  fi
+
+  shell=$(select_shell)
+
+  cd "$worktree_path"
+  exec "$shell" -l
+}
+
+command_path() {
+  local branch repo_name base_dir worktree_path
+
+  branch="$1"
+  repo_name=$(repo_name)
+  base_dir=$(expand_base_dir)
+  worktree_path="$base_dir/$repo_name/$branch"
+
+  printf '%s\n' "$worktree_path"
+}
+
+command_remove() {
+  local branch repo_name base_dir worktree_path
+
+  branch="$1"
+  repo_name=$(repo_name)
+  base_dir=$(expand_base_dir)
+  worktree_path="$base_dir/$repo_name/$branch"
+
+  if [ ! -d "$worktree_path" ]; then
+    die "worktree path not found: $worktree_path"
+  fi
+
+  git worktree remove "$worktree_path"
+}
+
+if [ "$#" -lt 1 ]; then
+  usage >&2
+  exit 1
+fi
+
+case "$1" in
+  new)
+    if [ "$#" -ne 2 ]; then
+      usage >&2
+      exit 1
+    fi
+    command_new "$2"
+    ;;
+  shell)
+    if [ "$#" -ne 2 ]; then
+      usage >&2
+      exit 1
+    fi
+    command_shell "$2"
+    ;;
+  path)
+    if [ "$#" -ne 2 ]; then
+      usage >&2
+      exit 1
+    fi
+    command_path "$2"
+    ;;
+  remove)
+    if [ "$#" -ne 2 ]; then
+      usage >&2
+      exit 1
+    fi
+    command_remove "$2"
+    ;;
+  -h|--help|help)
+    usage
+    ;;
+  *)
+    usage >&2
+    exit 1
+    ;;
+esac
