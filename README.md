@@ -23,6 +23,12 @@ Examples:
   gwm path feature/login
   gwm remove feature/login
 
+Installation:
+  - Make `gwm` executable and place it on your PATH, for example:
+    `chmod +x /path/to/worktree_manager/gwm`
+  - Then add the directory to your PATH, for example in `~/.bashrc`:
+    `export PATH="/path/to/worktree_manager:$PATH"`
+
 Completions:
 
 - Bash:
