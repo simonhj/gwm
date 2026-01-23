@@ -14,6 +14,15 @@ Usage:
   gwm shell <branch>
   gwm path <branch>
   gwm remove <branch>
+
+Commands:
+  new <branch>    Create a git worktree for the branch and print its path.
+  shell <branch>  Start a login shell inside the worktree directory.
+  path <branch>   Print the worktree directory path for the branch.
+  remove <branch> Remove the worktree directory for the branch.
+
+Environment:
+  GWM_WORKTREE_LOCATION  Base directory for worktrees (default: ~/worktrees).
 EOF
 }
 
