@@ -82,6 +82,14 @@ select_shell() {
   printf '%s' "/bin/bash"
 }
 
+detect_base_ref() {
+  if git show-ref --verify --quiet "refs/heads/main"; then
+    printf '%s' "main"
+  else
+    printf '%s' "master"
+  fi
+}
+
 command_new() {
   local branch repo_root repo_name base_dir worktree_path
 
@@ -163,7 +171,7 @@ command_list() {
   repo_name=$(repo_name)
   base_dir=$(expand_base_dir)
   root="$base_dir/$repo_name"
-  base_ref="master"
+  base_ref=$(detect_base_ref)
 
   if [ ! -d "$root" ]; then
     return 0
