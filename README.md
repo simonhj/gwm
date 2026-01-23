@@ -1,6 +1,7 @@
 # gwm
 
-`gwm` is a small helper for managing git worktrees by branch name.
+`gwm` is a small helper for managing git worktrees by branch name. Its largely
+designed around the authors own workflow using worktress
 
 Usage:
   gwm new <branch>

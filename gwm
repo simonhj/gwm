@@ -11,15 +11,17 @@ usage() {
   cat <<'EOF'
 Usage:
   gwm new <branch>
-  gwm shell <branch>
+  gwm shell <branch> [command]
   gwm path <branch>
   gwm remove <branch>
+  gwm list
 
 Commands:
   new <branch>    Create a git worktree for the branch and print its path.
   shell <branch>  Start a login shell inside the worktree directory.
   path <branch>   Print the worktree directory path for the branch.
   remove <branch> Remove the worktree directory for the branch.
+  list            List gwm-managed worktree directories.
 
 Environment:
   GWM_WORKTREE_LOCATION  Base directory for worktrees (default: ~/worktrees).
@@ -103,7 +105,7 @@ command_new() {
 }
 
 command_shell() {
-  local branch repo_name base_dir worktree_path shell
+  local branch repo_name base_dir worktree_path shell command
 
   branch="$1"
   repo_name=$(repo_name)
@@ -117,6 +119,13 @@ command_shell() {
   shell=$(select_shell)
 
   cd "$worktree_path"
+
+  if [ "$#" -gt 1 ]; then
+    shift
+    command="$*"
+    exec "$shell" -l -c "$command"
+  fi
+
   exec "$shell" -l
 }
 
@@ -146,6 +155,52 @@ command_remove() {
   git worktree remove "$worktree_path"
 }
 
+command_list() {
+  local repo_name base_dir root entry branch status_count status_label
+  local base_ref counts ahead behind
+
+  repo_name=$(repo_name)
+  base_dir=$(expand_base_dir)
+  root="$base_dir/$repo_name"
+  base_ref="master"
+
+  if [ ! -d "$root" ]; then
+    return 0
+  fi
+
+  printf '%-20s %-12s %-13s %s\n' "Branch" "Changes" "Ahead/Behind" "Path"
+
+  shopt -s nullglob
+  for entry in "$root"/*; do
+    if [ ! -d "$entry" ]; then
+      continue
+    fi
+
+    branch=${entry##*/}
+    status_count=$(git -C "$entry" status --porcelain 2>/dev/null | wc -l)
+    if [ "$status_count" -eq 0 ]; then
+      status_label="clean"
+    else
+      status_label="$status_count changes"
+    fi
+
+    if git -C "$entry" rev-parse --verify --quiet "$base_ref" >/dev/null; then
+      counts=$(git -C "$entry" rev-list --left-right --count "$base_ref...HEAD" 2>/dev/null || true)
+      if [ -n "$counts" ]; then
+        read -r behind ahead <<<"$counts"
+        counts="$ahead/$behind"
+      else
+        counts="-"
+      fi
+    else
+      counts="-"
+    fi
+
+    printf '%-20s %-12s %-13s %s\n' "$branch" "$status_label" "$counts" "$entry"
+  done
+  shopt -u nullglob
+}
+
 if [ "$#" -lt 1 ]; then
   usage >&2
   exit 1
@@ -160,11 +215,12 @@ case "$1" in
     command_new "$2"
     ;;
   shell)
-    if [ "$#" -ne 2 ]; then
+    if [ "$#" -lt 2 ]; then
       usage >&2
       exit 1
     fi
-    command_shell "$2"
+    shift
+    command_shell "$@"
     ;;
   path)
     if [ "$#" -ne 2 ]; then
@@ -179,6 +235,13 @@ case "$1" in
       exit 1
     fi
     command_remove "$2"
+    ;;
+  list)
+    if [ "$#" -ne 1 ]; then
+      usage >&2
+      exit 1
+    fi
+    command_list
     ;;
   -h|--help|help)
     usage
