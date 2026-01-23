@@ -1,0 +1,132 @@
+__gwm_repo_root() {
+  command git rev-parse --show-toplevel 2>/dev/null
+}
+
+__gwm_repo_name() {
+  local repo_root
+  repo_root=$(__gwm_repo_root) || return
+  repo_root=${repo_root%/}
+  printf '%s' "${repo_root##*/}"
+}
+
+__gwm_base_dir() {
+  local base_dir
+  base_dir=${GWM_WORKTREE_LOCATION:-~/worktrees}
+
+  case "$base_dir" in
+    ~)
+      base_dir="$HOME"
+      ;;
+    ~/*)
+      base_dir="$HOME/${base_dir#~/}"
+      ;;
+  esac
+
+  printf '%s' "$base_dir"
+}
+
+__gwm_worktrees_root() {
+  local base_dir repo_name
+  base_dir=$(__gwm_base_dir) || return
+  repo_name=$(__gwm_repo_name) || return
+  printf '%s/%s' "$base_dir" "$repo_name"
+}
+
+__gwm_branches() {
+  local repo_root
+  repo_root=$(__gwm_repo_root) || return
+  command git for-each-ref --format='%(refname:short)' refs/heads 2>/dev/null
+}
+
+__gwm_worktrees() {
+  local repo_root worktrees_root
+  repo_root=$(__gwm_repo_root) || return
+  worktrees_root=$(__gwm_worktrees_root) || return
+
+  local key value path branch include
+  include=0
+  command git worktree list --porcelain 2>/dev/null | while read -r key value; do
+    case "$key" in
+      worktree)
+        path="$value"
+        include=0
+        case "$path" in
+          "$worktrees_root"|"$worktrees_root"/*)
+            include=1
+            ;;
+        esac
+        ;;
+      branch)
+        if [ "$include" -eq 1 ]; then
+          branch="${value#refs/heads/}"
+          if [ -n "$branch" ]; then
+            printf '%s\t%s\n' "$branch" "$path"
+          fi
+        fi
+        ;;
+    esac
+  done
+}
+
+__gwm_worktree_branches() {
+  __gwm_worktrees | while IFS=$'\t' read -r branch path; do
+    if [ -n "$branch" ]; then
+      printf '%s\n' "$branch"
+    fi
+  done
+}
+
+__gwm_worktree_paths() {
+  __gwm_worktrees | while IFS=$'\t' read -r branch path; do
+    if [ -n "$path" ]; then
+      printf '%s\n' "$path"
+    fi
+  done
+}
+
+_gwm() {
+  local cur
+  cur="${COMP_WORDS[COMP_CWORD]}"
+
+  if [ "$COMP_CWORD" -eq 1 ]; then
+    COMPREPLY=( $(compgen -W "new shell path remove help -h --help" -- "$cur") )
+    return 0
+  fi
+
+  local subcommand
+  subcommand="${COMP_WORDS[1]}"
+
+  local -a options=()
+  local -a extra=()
+
+  case "$subcommand" in
+    new)
+      mapfile -t options < <(__gwm_branches)
+      ;;
+    path)
+      mapfile -t options < <(__gwm_branches)
+      mapfile -t extra < <(__gwm_worktree_paths)
+      options+=("${extra[@]}")
+      ;;
+    shell|remove)
+      mapfile -t options < <(__gwm_worktree_branches)
+      mapfile -t extra < <(__gwm_worktree_paths)
+      options+=("${extra[@]}")
+      ;;
+    *)
+      return 0
+      ;;
+  esac
+
+  local -a matches=()
+  local item
+  for item in "${options[@]}"; do
+    if [[ $item == "$cur"* ]]; then
+      matches+=("$item")
+    fi
+  done
+
+  COMPREPLY=("${matches[@]}")
+}
+
+complete -F _gwm gwm
