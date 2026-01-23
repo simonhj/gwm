@@ -13,11 +13,11 @@ Usage:
   gwm list
 
 Commands:
-  new <branch>    Create a git worktree for the branch and print its path.
-  shell <branch>  Start a login shell inside the worktree directory.
-  path <branch>   Print the worktree directory path for the branch.
-  remove <branch> Remove the worktree directory for the branch.
-  list            List gwm-managed worktree directories.
+  new <branch>              Create a git worktree for the branch and print its path.
+  shell <branch> [command]  Start a login shell inside the worktree directory. If command is supplied, its executed in the shell
+  path <branch>             Print the worktree directory path for the branch.
+  remove <branch>           Remove the worktree directory for the branch.
+  list                      List gwm-managed worktree directories.
 
 Environment:
   GWM_WORKTREE_LOCATION  Base directory for worktrees (default: ~/worktrees).
