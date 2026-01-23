@@ -19,7 +19,7 @@ Usage:
 
 Commands:
   new <branch>    Create a git worktree for the branch and print its path.
-  shell <branch>  Start a login shell inside the worktree directory.
+  shell <branch> [command]  Start a login shell inside the worktree directory. If [command] is provided, execute it in that shell.
   path <branch>   Print the worktree directory path for the branch.
   remove <branch> Remove the worktree directory for the branch.
   list            List gwm-managed worktree directories.
