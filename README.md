@@ -1,11 +1,26 @@
 # Git Worktree manager `gwm`
 
-`gwm` is a small helper for managing git worktrees by branch name. Its largely
-designed around the authors own workflow using worktress
+`gwm` is a small helper for managing git worktrees by branch name.
 
-License: BSD 3-Clause. See `LICENSE`.
+Example:
+
+``` shell
+$ gwm new feature1
+$ cd (gwm path feature1)
+<code>
+$ git rebase feature1
+```
+
+Or more frequently these days:
+
+``` shell
+$ gwm new feature1
+$ gwm shell feature1 opencode
+```
 
 Usage:
+
+``` shell
   gwm new <branch>
   gwm shell <branch> [command]
   gwm path <branch>
@@ -21,6 +36,8 @@ Commands:
 
 Environment:
   GWM_WORKTREE_LOCATION  Base directory for worktrees (default: ~/worktrees).
+
+```
 
 Installation:
   - Make `gwm` executable and place it on your PATH, for example:
