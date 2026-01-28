@@ -17,6 +17,7 @@ Usage:
   gwm remove <branch>
   gwm list
   gwm clean
+  gwm rebase_all [<branch>]
 
 Commands:
   new <branch>     Create a git worktree for the branch and print its path.
@@ -26,6 +27,9 @@ Commands:
   remove <branch>  Remove the worktree directory for the branch.
   list             List gwm-managed worktree directories.
   clean            Remove clean worktree directories (no unstaged or uncommitted changes).
+  rebase_all [<branch>]
+                   Rebase all worktrees onto <branch>. If <branch> is not provided,
+                   defaults to main or master depending on what the repo uses.
 
 Environment:
   GWM_WORKTREE_LOCATION  Base directory for worktrees (default: ~/worktrees).
@@ -238,6 +242,61 @@ command_clean() {
   shopt -u nullglob
 }
 
+command_rebase_all() {
+  local repo_name base_dir root entry branch base_ref
+  local -A results
+
+  repo_name=$(repo_name)
+  base_dir=$(expand_base_dir)
+  root="$base_dir/$repo_name"
+
+  # Determine the base branch
+  if [ "$#" -eq 1 ] && [ -n "$1" ]; then
+    base_ref="$1"
+  else
+    base_ref=$(detect_base_ref)
+  fi
+
+  if [ ! -d "$root" ]; then
+    die "no worktrees found"
+  fi
+
+  printf '%s\n' "Rebasing all worktrees onto $base_ref"
+
+  shopt -s nullglob
+  for entry in "$root"/*; do
+    if [ ! -d "$entry" ]; then
+      continue
+    fi
+
+    branch=${entry##*/}
+    
+    # Skip the base branch itself
+    if [ "$branch" = "$base_ref" ]; then
+      results["$branch"]="SKIPPED (base branch)"
+      continue
+    fi
+
+    printf '%s\n' "Rebasing $branch..."
+
+    # Attempt to rebase
+    if git -C "$entry" rebase "$base_ref" >/dev/null 2>&1; then
+      results["$branch"]="SUCCESS"
+    else
+      # Rebase failed, leave worktree in rebase state
+      results["$branch"]="FAILED (in rebase)"
+    fi
+  done
+  shopt -u nullglob
+
+  # Print summary
+  printf '\n%s\n' "Rebase Summary:"
+  printf '%s\n' "==============="
+  for branch in "${!results[@]}"; do
+    printf '%-20s %s\n' "$branch:" "${results[$branch]}"
+  done
+}
+
 if [ "$#" -lt 1 ]; then
   usage >&2
   exit 1
@@ -286,6 +345,14 @@ case "$1" in
       exit 1
     fi
     command_clean
+    ;;
+  rebase_all)
+    if [ "$#" -gt 2 ]; then
+      usage >&2
+      exit 1
+    fi
+    shift
+    command_rebase_all "$@"
     ;;
   -h|--help|help)
     usage
