@@ -53,6 +53,8 @@ complete -c gwm -n '__fish_use_subcommand' -a help -d 'Show help'
 
 complete -c gwm -s h -l help -d 'Show help'
 
+complete -c gwm -n '__fish_seen_subcommand_from remove' -s f -l force -d 'Remove even with local changes'
+
 complete -c gwm -n '__fish_seen_subcommand_from new' -a '(__gwm_branches)' -d 'Branch'
 complete -c gwm -n '__fish_seen_subcommand_from path' -a '(__gwm_branches_with_paths)'
 complete -c gwm -n '__fish_seen_subcommand_from shell remove' -a '(__gwm_worktrees)'

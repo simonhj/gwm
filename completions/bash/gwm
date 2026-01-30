@@ -101,6 +101,13 @@ _gwm() {
   local -a options=()
   local -a extra=()
 
+  if [ "$subcommand" = "remove" ]; then
+    if [[ $cur == -* ]]; then
+      COMPREPLY=( $(compgen -W "--force -f" -- "$cur") )
+      return 0
+    fi
+  fi
+
   case "$subcommand" in
     new)
       mapfile -t options < <(__gwm_branches)

@@ -24,14 +24,14 @@ Usage:
   gwm new <branch>
   gwm shell <branch> [command]
   gwm path <branch>
-  gwm remove <branch>
+  gwm remove [--force] <branch>
   gwm list
 
 Commands:
   new <branch>              Create a git worktree for the branch and print its path.
   shell <branch> [command]  Start a login shell inside the worktree directory. If command is supplied, its executed in the shell
   path <branch>             Print the worktree directory path for the branch.
-  remove <branch>           Remove the worktree directory for the branch.
+  remove [--force] <branch> Remove the worktree directory for the branch. With --force, remove even if it has local changes.
   list                      List gwm-managed worktree directories.
 
 Environment:
