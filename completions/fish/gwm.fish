@@ -48,7 +48,11 @@ complete -c gwm -f
 complete -c gwm -n '__fish_use_subcommand' -a new -d 'Create a worktree for a branch'
 complete -c gwm -n '__fish_use_subcommand' -a shell -d 'Start a shell in the worktree'
 complete -c gwm -n '__fish_use_subcommand' -a path -d 'Print the worktree path'
+complete -c gwm -n '__fish_use_subcommand' -a repo -d 'Print the main repo path'
 complete -c gwm -n '__fish_use_subcommand' -a remove -d 'Remove a worktree'
+complete -c gwm -n '__fish_use_subcommand' -a list -d 'List worktrees'
+complete -c gwm -n '__fish_use_subcommand' -a clean -d 'Remove clean worktrees'
+complete -c gwm -n '__fish_use_subcommand' -a rebase_all -d 'Rebase all worktrees'
 complete -c gwm -n '__fish_use_subcommand' -a help -d 'Show help'
 
 complete -c gwm -s h -l help -d 'Show help'

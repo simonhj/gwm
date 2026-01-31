@@ -91,7 +91,7 @@ _gwm() {
   cur="${COMP_WORDS[COMP_CWORD]}"
 
   if [ "$COMP_CWORD" -eq 1 ]; then
-    COMPREPLY=( $(compgen -W "new shell path remove help -h --help" -- "$cur") )
+    COMPREPLY=( $(compgen -W "new shell path repo remove list clean rebase_all help -h --help" -- "$cur") )
     return 0
   fi
 
@@ -116,6 +116,9 @@ _gwm() {
       mapfile -t options < <(__gwm_branches)
       mapfile -t extra < <(__gwm_worktree_paths)
       options+=("${extra[@]}")
+      ;;
+    repo)
+      return 0
       ;;
     shell|remove)
       mapfile -t options < <(__gwm_worktree_branches)

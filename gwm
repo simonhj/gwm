@@ -14,6 +14,7 @@ Usage:
   gwm new <branch>
   gwm shell <branch> [command]
   gwm path <branch>
+  gwm repo
   gwm remove [--force] <branch>
   gwm list
   gwm clean
@@ -24,6 +25,7 @@ Commands:
   shell <branch> [command]
                     Start a login shell inside the worktree directory. If [command] is provided, execute it in that shell.
   path <branch>    Print the worktree directory path for the branch.
+  repo             Print the main repository root path.
   remove [--force] <branch>
                    Remove the worktree directory for the branch. With --force, remove even if it has local changes.
   list             List gwm-managed worktree directories.
@@ -46,6 +48,23 @@ require_git_repo() {
   if ! repo_root=$(git rev-parse --show-toplevel 2>/dev/null); then
     die "not a git repository"
   fi
+  printf '%s' "$repo_root"
+}
+
+main_repo_root() {
+  local repo_root key value
+
+  repo_root=$(require_git_repo)
+
+  if git worktree list --porcelain >/dev/null 2>&1; then
+    while read -r key value; do
+      if [ "$key" = "worktree" ] && [ -d "$value/.git" ]; then
+        printf '%s' "$value"
+        return 0
+      fi
+    done < <(git worktree list --porcelain 2>/dev/null)
+  fi
+
   printf '%s' "$repo_root"
 }
 
@@ -155,6 +174,13 @@ command_path() {
   worktree_path="$base_dir/$repo_name/$branch"
 
   printf '%s\n' "$worktree_path"
+}
+
+command_repo() {
+  local repo_root
+
+  repo_root=$(main_repo_root)
+  printf '%s\n' "$repo_root"
 }
 
 command_remove() {
@@ -355,6 +381,13 @@ case "$1" in
       exit 1
     fi
     command_path "$2"
+    ;;
+  repo)
+    if [ "$#" -ne 1 ]; then
+      usage >&2
+      exit 1
+    fi
+    command_repo
     ;;
   remove)
     shift
