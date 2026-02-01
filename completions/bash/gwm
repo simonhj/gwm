@@ -108,27 +108,27 @@ _gwm() {
     fi
   fi
 
-  case "$subcommand" in
-    new)
-      mapfile -t options < <(__gwm_branches)
-      ;;
-    path)
-      mapfile -t options < <(__gwm_branches)
-      mapfile -t extra < <(__gwm_worktree_paths)
-      options+=("${extra[@]}")
-      ;;
-    repo)
-      return 0
-      ;;
-    shell|remove)
-      mapfile -t options < <(__gwm_worktree_branches)
-      mapfile -t extra < <(__gwm_worktree_paths)
-      options+=("${extra[@]}")
-      ;;
-    *)
-      return 0
-      ;;
-  esac
+   case "$subcommand" in
+     new)
+       mapfile -t options < <(__gwm_branches)
+       ;;
+     path)
+       mapfile -t options < <(__gwm_worktree_branches)
+       mapfile -t extra < <(__gwm_worktree_paths)
+       options+=("${extra[@]}")
+       ;;
+     repo)
+       return 0
+       ;;
+     shell|remove)
+       mapfile -t options < <(__gwm_worktree_branches)
+       mapfile -t extra < <(__gwm_worktree_paths)
+       options+=("${extra[@]}")
+       ;;
+     *)
+       return 0
+       ;;
+   esac
 
   local -a matches=()
   local item
