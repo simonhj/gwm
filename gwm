@@ -8,6 +8,18 @@ fi
 
 set -euo pipefail
 
+# Colors (disabled when output is not a terminal)
+if [ -t 1 ]; then
+  bold=$'\033[1m'
+  red=$'\033[31m'
+  green=$'\033[32m'
+  yellow=$'\033[33m'
+  cyan=$'\033[36m'
+  reset=$'\033[0m'
+else
+  bold='' red='' green='' yellow='' cyan='' reset=''
+fi
+
 usage() {
   cat <<'EOF'
 Usage:
@@ -40,7 +52,7 @@ EOF
 }
 
 die() {
-  echo "gwm: $*" >&2
+  printf '%s\n' "${red}gwm: $*${reset}" >&2
   exit 1
 }
 
@@ -137,7 +149,7 @@ command_new() {
     git worktree add -b "$branch" "$worktree_path"
   fi
 
-  printf '%s\n' "$worktree_path"
+  printf '%s\n' "${green}$worktree_path${reset}"
 }
 
 command_shell() {
@@ -241,7 +253,7 @@ command_list() {
     return 0
   fi
 
-  printf '%-20s %-12s %-13s %s\n' "Branch" "Changes" "Ahead/Behind" "Path"
+  printf "${bold}%-20s %-12s %-13s %s${reset}\n" "Branch" "Changes" "Ahead/Behind" "Path"
 
   shopt -s nullglob
   for entry in "$root"/*; do
@@ -252,9 +264,9 @@ command_list() {
     branch=${entry##*/}
     status_count=$(git -C "$entry" status --porcelain 2>/dev/null | wc -l)
     if [ "$status_count" -eq 0 ]; then
-      status_label="clean"
+      status_label="${green}clean${reset}"
     else
-      status_label="$status_count changes"
+      status_label="${yellow}$status_count changes${reset}"
     fi
 
     if git -C "$entry" rev-parse --verify --quiet "$base_ref" >/dev/null; then
@@ -269,7 +281,7 @@ command_list() {
       counts="-"
     fi
 
-    printf '%-20s %-12s %-13s %s\n' "$branch" "$status_label" "$counts" "$entry"
+    printf "${cyan}%-20s${reset} %-12s %-13s %s\n" "$branch" "$status_label" "$counts" "$entry"
   done
   shopt -u nullglob
 }
@@ -292,7 +304,7 @@ command_clean() {
     fi
 
     if [ "$(git -C "$entry" status --porcelain 2>/dev/null | wc -l)" -eq 0 ]; then
-      printf '%s\n' "Removing clean worktree: $entry"
+      printf '%s\n' "${yellow}Removing clean worktree:${reset} $entry"
       git worktree remove "$entry"
     fi
   done
@@ -318,7 +330,7 @@ command_rebase_all() {
     die "no worktrees found"
   fi
 
-  printf '%s\n' "Rebasing all worktrees onto $base_ref"
+  printf '%s\n' "Rebasing all worktrees onto ${bold}$base_ref${reset}"
 
   shopt -s nullglob
   for entry in "$root"/*; do
@@ -330,24 +342,24 @@ command_rebase_all() {
     
     # Skip the base branch itself
     if [ "$branch" = "$base_ref" ]; then
-      results["$branch"]="SKIPPED (base branch)"
+      results["$branch"]="${yellow}SKIPPED${reset} (base branch)"
       continue
     fi
 
-    printf '%s\n' "Rebasing $branch..."
+    printf '%s\n' "Rebasing ${cyan}$branch${reset}..."
 
     # Attempt to rebase
     if git -C "$entry" rebase "$base_ref" >/dev/null 2>&1; then
-      results["$branch"]="SUCCESS"
+      results["$branch"]="${green}SUCCESS${reset}"
     else
       # Rebase failed, leave worktree in rebase state
-      results["$branch"]="FAILED (in rebase)"
+      results["$branch"]="${red}FAILED (in rebase)${reset}"
     fi
   done
   shopt -u nullglob
 
   # Print summary
-  printf '\n%s\n' "Rebase Summary:"
+  printf '\n%s\n' "${bold}Rebase Summary:${reset}"
   printf '%s\n' "==============="
   for branch in "${!results[@]}"; do
     printf '%-20s %s\n' "$branch:" "${results[$branch]}"
